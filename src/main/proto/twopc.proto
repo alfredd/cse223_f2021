@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package protocol;
+
+option java_package = "edu.uci.ics.cse223";
+
+service TransactionClient {
+    rpc executeTransaction (SQL) returns (TransactionStatus);
+}
+service Coordinator {
+    rpc preparedAck (SQL) returns (SQL);
+    rpc commitAck (SQL) returns (SQL);
+    rpc abortAck (SQL) returns (SQL);
+}
+
+service Cohort {
+    rpc prepare (SQL) returns (SQL);
+    rpc commit (SQL) returns (SQL);
+    rpc abort (SQL) returns (SQL);
+}
+
+message SQL {
+    string statement = 1;
+    string id = 2;
+    Status status = 3;
+}
+
+message TransactionStatus {
+    Status status = 1;
+}
+
+enum Status {
+    COMMITTED = 0;
+    ABORTED = 1;
+    PREPARED = 2;
+    ABORT = 3;
+}
