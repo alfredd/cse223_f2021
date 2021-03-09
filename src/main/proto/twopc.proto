@@ -4,7 +4,7 @@ package protocol;
 
 option java_package = "edu.uci.ics.cse223";
 
-service TransactionClient {
+service TransactionService {
     rpc executeTransaction (SQL) returns (TransactionStatus);
 }
 service Coordinator {
@@ -20,11 +20,15 @@ service Cohort {
 }
 
 message SQL {
-    string statement = 1;
+    repeated string statement = 1;
     string id = 2;
     Status status = 3;
 }
 
+message INSQL {
+    string id = 1;
+
+}
 message TransactionStatus {
     Status status = 1;
 }
@@ -32,6 +36,7 @@ message TransactionStatus {
 enum Status {
     COMMITTED = 0;
     ABORTED = 1;
-    PREPARED = 2;
+    COMMIT = 2;
     ABORT = 3;
+    PREPARE = 4;
 }
