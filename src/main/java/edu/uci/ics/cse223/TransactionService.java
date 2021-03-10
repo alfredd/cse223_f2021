@@ -78,6 +78,8 @@ class TransactionExecutor implements Runnable {
             /**
              * Delete transaction entries from log.
              */
+//            db.deleteRedoLog(request.getId());
+//            db.deleteProtocolLog(request.getId());
             responseObserver.onNext(Twopc.TransactionStatus.newBuilder().setStatus(Twopc.Status.COMMITTED).build());
             responseObserver.onCompleted();
         } else {

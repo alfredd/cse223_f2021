@@ -33,5 +33,17 @@ public class TransactionClient {
         } else {
             System.out.println("Transaction aborted.");
         }
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        TransactionClient client = new TransactionClient();
+        Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("thermometer5")
+                .addStatement(
+                        "INSERT INTO thermometerobservation VALUES " +
+                                "('54fd1b36-84a1-4848-8bcf-cb165b2af698', 80, '2017-11-08 00:00:00', 'thermometer5');")
+                .addStatement("INSERT INTO thermometerobservation VALUES ('dffa33b8-93cc-46b0-83bb-2e8bb2fb2c61', 8, '2017-11-08 05:38:00', 'thermometer5');")
+                .build();
+         client.executeTransaction(transaction);
     }
 }

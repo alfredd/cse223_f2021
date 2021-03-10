@@ -46,7 +46,7 @@ public class CohortManager {
             Twopc.SQL response = client.getValue().commit(request);
             db.updateProtocolLog(response.getId(), cohortID, response.getStatus().toString());
         }
-        finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.COMMITTED).setId(request.getId()).build();
+        finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.DONE).setId(request.getId()).build();
 
         return finalResponse;
     }
