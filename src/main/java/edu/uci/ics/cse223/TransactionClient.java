@@ -1,0 +1,37 @@
+package edu.uci.ics.cse223;
+
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+public class TransactionClient {
+    private ManagedChannel channel;
+    private int port;
+    private TransactionServiceGrpc.TransactionServiceBlockingStub blockingStub;
+
+    public TransactionClient() throws IOException {
+        ConfigurationManager cm = new ConfigurationManager();
+        this.port = cm.getHostPort(0);
+        this.channel = ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
+        blockingStub = TransactionServiceGrpc.newBlockingStub(channel);
+    }
+
+    public void shutdown() throws InterruptedException {
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+    }
+
+    public boolean isConnected() {
+        return !channel.isTerminated();
+    }
+
+    public void executeTransaction(Twopc.SQL transactionSQL) {
+        Twopc.TransactionStatus response = blockingStub.executeTransaction(transactionSQL);
+        if (response.getStatus() == Twopc.Status.COMMITTED) {
+            System.out.println("Transaction committed. ");
+        } else {
+            System.out.println("Transaction aborted.");
+        }
+    }
+}
