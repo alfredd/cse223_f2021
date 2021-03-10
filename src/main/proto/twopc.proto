@@ -23,6 +23,7 @@ message SQL {
     repeated string statement = 1;
     string id = 2;
     Status status = 3;
+    string agentID = 4;
 }
 
 message INSQL {
@@ -39,4 +40,5 @@ enum Status {
     COMMIT = 2;
     ABORT = 3;
     PREPARE = 4;
+    WAIT = 5;
 }

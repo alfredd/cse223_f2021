@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class TransactionClient {
-    private ManagedChannel channel;
+    private final ManagedChannel channel;
     private int port;
     private TransactionServiceGrpc.TransactionServiceBlockingStub blockingStub;
 

@@ -18,7 +18,7 @@ public class CoordinatorServer {
         Server server = null;
         try {
             server = ServerBuilder.forPort(serverPortNumber)
-//                    .addService(new CoordinatorService(db))
+                    .addService(new CoordinatorService(db))
                     .addService(new TransactionService(db))
                     .build().start();
         } catch (IOException e) {

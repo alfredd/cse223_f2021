@@ -20,6 +20,17 @@ public class TransactionService extends TransactionServiceGrpc.TransactionServic
         cm = new CohortManager();
     }
 
+    public void checkBackupTxns () {
+        /**
+         * Load Status of txns from LOG.
+         * If PREPARE but no response from Cohorts yet:
+         *      Send PREPARE again.
+         * If COMMIT: Send COMMIT to cohorts again
+         *
+         */
+
+    }
+
     @Override
     public void executeTransaction(Twopc.SQL request, StreamObserver<Twopc.TransactionStatus> responseObserver) {
         /**
@@ -50,12 +61,24 @@ class TransactionExecutor implements Runnable {
 
     @Override
     public void run() {
+        /**
+         * Add Forced Log For transactions:
+         * Add Entries for Prepare statement into DB table
+         * 1. TxnID, TxnStmts
+         * 2. TxnID, CohortID, Status (PREPARE, COMMIT)
+         */
         Twopc.SQL prepareResponse = cm.sendPrepare(request);
         if (prepareResponse.getStatus()== Twopc.Status.COMMIT) {
             Twopc.SQL commitResponse = cm.sendCommit(prepareResponse);
+            /**
+             * Delete transaction entries from log.
+             */
             responseObserver.onNext(Twopc.TransactionStatus.newBuilder().setStatus(Twopc.Status.COMMITTED).build());
             responseObserver.onCompleted();
         } else {
+            /**
+             * Update Txn Entries to ABORT.
+             */
             Twopc.SQL abortResponse = cm.sendAbort(Twopc.SQL.newBuilder(prepareResponse).setStatus(Twopc.Status.ABORT).build());
             responseObserver.onNext(Twopc.TransactionStatus.newBuilder().setStatus(Twopc.Status.ABORTED).build());
             responseObserver.onCompleted();
