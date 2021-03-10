@@ -11,7 +11,15 @@ public class CohortService extends CohortGrpc.CohortImplBase {
 
     @Override
     public void prepare(Twopc.SQL request, StreamObserver<Twopc.SQL> responseObserver) {
-        super.prepare(request, responseObserver);
+        /**
+         * DB call to PREPARE TRANSACTION with request.id
+         * Based on return value add response to responseObserver.
+         */
+
+        Twopc.SQL resp = Twopc.SQL.newBuilder().setStatus(Twopc.Status.ABORTED).build();
+        responseObserver.onNext(resp);
+        responseObserver.onCompleted();
+//        super.prepare(request, responseObserver);
     }
 
     @Override
