@@ -10,7 +10,7 @@ import java.sql.SQLException;
 
 public class CoordinatorServer {
 
-    public static void main(String[] args) throws IOException, SQLException {
+    public static void main(String[] args) throws IOException, SQLException, InterruptedException {
         ConfigurationManager configurationManager = new ConfigurationManager();
         Integer serverPortNumber = configurationManager.getHostPort(0);
         String dbUrl = configurationManager.getDBUrl(0);
@@ -24,6 +24,7 @@ public class CoordinatorServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        System.out.println("Server started.");
         Server finalServer = server;
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -34,5 +35,9 @@ public class CoordinatorServer {
                 db.close();
             }
         });
+        if (server!=null) {
+            server.awaitTermination();
+        }
+
     }
 }
