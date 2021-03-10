@@ -19,15 +19,15 @@ public class CohortManager {
         }
     }
 
-    public Twopc.SQL sendPrepare(Twopc.SQL request) {
+    public Twopc.SQL sendPrepare(final Twopc.SQL request) {
         return null;
     }
 
-    public Twopc.SQL sendCommit(Twopc.SQL request) {
+    public Twopc.SQL sendCommit(final Twopc.SQL request) {
         return null;
     }
 
-    public Twopc.SQL sendAbort(Twopc.SQL request) {
+    public Twopc.SQL sendAbort(final Twopc.SQL request) {
         return null;
     }
 }
