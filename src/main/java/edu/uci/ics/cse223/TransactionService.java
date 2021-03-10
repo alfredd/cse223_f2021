@@ -16,7 +16,7 @@ public class TransactionService extends TransactionServiceGrpc.TransactionServic
     public TransactionService(DB db) throws IOException {
         this.db = db;
         threadPoolExecutor = new ThreadPoolExecutor(
-                1, 1, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+                1, 10, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         cm = new CohortManager();
     }
 

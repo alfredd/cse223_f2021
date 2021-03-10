@@ -20,15 +20,42 @@ public class CohortManager {
     }
 
     public Twopc.SQL sendPrepare(final Twopc.SQL request) {
-        return null;
+        Twopc.SQL finalResponse = null;
+        for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
+            Integer cohortID = client.getKey();
+            Twopc.SQL response = client.getValue().prepare(request);
+            if (response.getStatus()== Twopc.Status.ABORT) {
+                finalResponse = response;
+                break;
+            }
+        }
+        if (finalResponse==null) {
+            finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.COMMIT).setId(request.getId()).build();
+        }
+
+        return finalResponse;
     }
 
     public Twopc.SQL sendCommit(final Twopc.SQL request) {
-        return null;
+        Twopc.SQL finalResponse = null;
+        for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
+            Integer cohortID = client.getKey();
+            Twopc.SQL response = client.getValue().commit(request);
+        }
+        finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.COMMITTED).setId(request.getId()).build();
+
+        return finalResponse;
     }
 
     public Twopc.SQL sendAbort(final Twopc.SQL request) {
-        return null;
+        Twopc.SQL finalResponse = null;
+        for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
+            Integer cohortID = client.getKey();
+            Twopc.SQL response = client.getValue().abort(request);
+        }
+        finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.ABORTED).setId(request.getId()).build();
+
+        return finalResponse;
     }
 }
 
