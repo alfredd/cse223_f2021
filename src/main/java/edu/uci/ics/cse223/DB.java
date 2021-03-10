@@ -54,7 +54,7 @@ public class DB {
                         " txnStatement varchar(255) NOT NULL)",
                 "CREATE TABLE IF NOT EXISTS ProtocolLog (" +
                         " txnId varchar(25) NOT NULL, " +
-                        " cohortId varchar(25) NOT NULL," +
+                        " cohortId integer NOT NULL," +
                         " status varchar(25) NOT NULL)",
                 "CREATE TABLE IF NOT EXISTS CohortLog (" +
                         " txnId varchar(25) NOT NULL, " +
@@ -157,13 +157,13 @@ public class DB {
         return status;
     }
 
-    public boolean insertProtocolLog(String txnId, String coId, String st) {
+    public boolean insertProtocolLog(String txnId, Integer coId, String st) {
         boolean status = false;
         String query = "insert into ProtocolLog (txnId, cohortId, status) values (?, ?, ?)";
         try {
             PreparedStatement pStatement = conn.prepareStatement(query);
             pStatement.setString(1, txnId);
-            pStatement.setString(2, coId);
+            pStatement.setInt(2, coId);
             pStatement.setString(3, st);
             status = pStatement.execute();
             conn.commit();
@@ -187,14 +187,14 @@ public class DB {
         return status;
     }
 
-    public int updateProtocolLog(String txnId, String coId, String stat) {
+    public int updateProtocolLog(String txnId, Integer coId, String stat) {
         String query = "update ProtocolLog set status=? where txnId=? and cohortId=?";
         int status = 0;
         try {
             PreparedStatement pStmt = conn.prepareStatement(query);
             pStmt.setString(1, stat);
             pStmt.setString(2, txnId);
-            pStmt.setString(3, coId);
+            pStmt.setInt(3, coId);
             status = pStmt.executeUpdate();
         } catch (SQLException throwables) {
             return -1;

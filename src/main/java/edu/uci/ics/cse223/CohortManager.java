@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 public class CohortManager {
     private Map<Integer, CohortClient> cohortClientMap = new LinkedHashMap<>();
+    private DB db;
 
     public CohortManager() throws IOException {
         ConfigurationManager cm = new ConfigurationManager();
@@ -23,10 +24,11 @@ public class CohortManager {
         Twopc.SQL finalResponse = null;
         for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
             Integer cohortID = client.getKey();
+            db.insertProtocolLog(request.getId(), cohortID, Twopc.Status.PREPARE.toString());
             Twopc.SQL response = client.getValue().prepare(request);
+            db.updateProtocolLog(request.getId(), cohortID, response.getStatus().toString());
             if (response.getStatus()== Twopc.Status.ABORT) {
-                finalResponse = response;
-                break;
+                finalResponse = Twopc.SQL.newBuilder(response).build();
             }
         }
         if (finalResponse==null) {
@@ -40,7 +42,9 @@ public class CohortManager {
         Twopc.SQL finalResponse = null;
         for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
             Integer cohortID = client.getKey();
+            db.updateProtocolLog(request.getId(), cohortID, Twopc.Status.COMMITTED.toString());
             Twopc.SQL response = client.getValue().commit(request);
+            db.updateProtocolLog(response.getId(), cohortID, response.getStatus().toString());
         }
         finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.COMMITTED).setId(request.getId()).build();
 
@@ -51,11 +55,17 @@ public class CohortManager {
         Twopc.SQL finalResponse = null;
         for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
             Integer cohortID = client.getKey();
+            db.updateProtocolLog(request.getId(), cohortID, Twopc.Status.ABORT.toString());
             Twopc.SQL response = client.getValue().abort(request);
+            db.updateProtocolLog(response.getId(), cohortID, response.getStatus().toString());
         }
         finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.ABORTED).setId(request.getId()).build();
 
         return finalResponse;
+    }
+
+    public void setDB(DB db) {
+        this.db=db;
     }
 }
 

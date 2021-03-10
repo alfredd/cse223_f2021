@@ -18,6 +18,7 @@ public class TransactionService extends TransactionServiceGrpc.TransactionServic
         threadPoolExecutor = new ThreadPoolExecutor(
                 1, 10, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         cm = new CohortManager();
+        cm.setDB(db);
     }
 
     public void checkBackupTxns () {
@@ -26,6 +27,8 @@ public class TransactionService extends TransactionServiceGrpc.TransactionServic
          * If PREPARE but no response from Cohorts yet:
          *      Send PREPARE again.
          * If COMMIT: Send COMMIT to cohorts again
+         *
+         * Finally remove COMMITTED logs from DB.
          *
          */
 
@@ -67,6 +70,8 @@ class TransactionExecutor implements Runnable {
          * 1. TxnID, TxnStmts
          * 2. TxnID, CohortID, Status (PREPARE, COMMIT)
          */
+        String txnQuery = String.join(";", request.getStatementList());
+        db.insertRedoLog(request.getId(),txnQuery );
         Twopc.SQL prepareResponse = cm.sendPrepare(request);
         if (prepareResponse.getStatus()== Twopc.Status.COMMIT) {
             Twopc.SQL commitResponse = cm.sendCommit(prepareResponse);

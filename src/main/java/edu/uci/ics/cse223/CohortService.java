@@ -10,11 +10,13 @@ import java.util.concurrent.TimeUnit;
 public class CohortService extends CohortGrpc.CohortImplBase {
     private final DB db;
     private final CoordinatorClient coordinatorClient;
+    private final Integer id;
 
-    public CohortService(DB db) throws IOException {
+
+    public CohortService(Integer cohortID, DB db) throws IOException {
         this.db=db;
         coordinatorClient = new CoordinatorClient();
-
+        this.id=cohortID;
     }
 
     public void checkBackupTxns() {
@@ -37,11 +39,19 @@ public class CohortService extends CohortGrpc.CohortImplBase {
          * DB call to PREPARE TRANSACTION with request.id
          * Based on return value add response to responseObserver.
          */
-        //boolean = DB.prepareSQL(request);
-        Twopc.SQL resp = Twopc.SQL.newBuilder().setStatus(Twopc.Status.ABORT).build();
+        db.insertCohortLog(request.getId(), Twopc.Status.PREPARE.toString());
+        boolean status = db.prepareSQL(request);
+        Twopc.Status responseStatus;
+        if (status) {
+            db.updateCohortLog(request.getId(), Twopc.Status.COMMIT.toString());
+            responseStatus = Twopc.Status.COMMIT;
+        } else {
+            db.updateCohortLog(request.getId(), Twopc.Status.ABORT.toString());
+            responseStatus = Twopc.Status.ABORT;
+        }
+        Twopc.SQL resp = Twopc.SQL.newBuilder().setId(request.getId()).setAgentID(this.id).setStatus(responseStatus).build();
         responseObserver.onNext(resp);
         responseObserver.onCompleted();
-//        super.prepare(request, responseObserver);
     }
 
     @Override

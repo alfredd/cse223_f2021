@@ -25,7 +25,7 @@ public class CohortServer {
         Server server = null;
         try {
             server = ServerBuilder.forPort(serverPortNumber)
-                    .addService(new CohortService(db))
+                    .addService(new CohortService(cohortID, db))
                     .build().start();
         } catch (IOException e) {
             e.printStackTrace();
