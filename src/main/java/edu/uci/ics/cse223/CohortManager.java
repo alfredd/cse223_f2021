@@ -12,10 +12,23 @@ public class CohortManager {
     private Map<Integer, CohortClient> cohortClientMap = new LinkedHashMap<>();
 
     public CohortManager() throws IOException {
-//        ConfigurationManager cm = new ConfigurationManager();
-//        for (int i = 1; i < 4; i++) {
-//            cohortClientMap.put(i, new CohortClient())
-//        }
+        ConfigurationManager cm = new ConfigurationManager();
+
+        for (int i = 1; i < 4; i++) {
+            cohortClientMap.put(i, new CohortClient(cm.getHostPort(i)));
+        }
+    }
+
+    public Twopc.SQL sendPrepare(Twopc.SQL request) {
+        return null;
+    }
+
+    public Twopc.SQL sendCommit(Twopc.SQL request) {
+        return null;
+    }
+
+    public Twopc.SQL sendAbort(Twopc.SQL request) {
+        return null;
     }
 }
 
@@ -41,4 +54,17 @@ class CohortClient {
     public boolean isConnected() {
         return !channel.isTerminated();
     }
+
+    public Twopc.SQL commit(Twopc.SQL request) {
+        return blockingStub.commit(request);
+    }
+
+    public Twopc.SQL prepare(Twopc.SQL request) {
+        return blockingStub.prepare(request);
+    }
+
+    public Twopc.SQL abort(Twopc.SQL request) {
+        return blockingStub.abort(request);
+    }
+
 }
