@@ -1,9 +1,12 @@
 package edu.uci.ics.cse223;
 
+import com.google.protobuf.ProtocolStringList;
 import jdk.jfr.internal.Logger;
 
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class DB {
@@ -83,23 +86,17 @@ public class DB {
     public boolean prepareSQL(Twopc.SQL request) {
         boolean status = false;
         Statement statement;
+
+        List<String> st = request.getStatementList();
+        StringBuilder strBui = new StringBuilder("prepare transaction ");
+        strBui.append(request.getId()).append(";").append(String.join(";", st));
+//        insertRedoLog(request.getId(), strBui.toString());
+
         try {
             statement = conn.createStatement();
-            status = statement.execute("prepare transaction " + request.getId());
+            status = statement.execute(strBui.toString());
         } catch(SQLException e) {
             return status;
-        }
-        if(status) {
-            PreparedStatement pStatement;
-            for (int i = 0; i < request.getStatementCount(); i++) {
-                try {
-                    pStatement = conn.prepareStatement(request.getStatement(i));
-                    status = pStatement.execute();
-                } catch (SQLException e) {
-                    status = false;
-                    break;
-                }
-            }
         }
 
         return status;
@@ -130,11 +127,158 @@ public class DB {
 
         return status;
     }
-}
 
-//class testDB {
-//    public static void main(String[] args) {
-//        String sql = "INSERT INTO thermometerobservation VALUES ('54fd1b36-84a1-4848-8bcf-cb165b2af698', 80, '2017-11-08 00:00:00', '30cced27_6cd1_4d82_9894_bddbb71a4402')";
-//        Twopc.SQL request = Twopc.SQL.newBuilder().addStatement(sql).setId("1").build();
-//    }
-//}
+    public boolean insertRedoLog(String txnId, String txnQuery) {
+        boolean status = false;
+        String query = "insert into RedoLog (txnId, txnStatement) values (?, ?)";
+        try {
+            PreparedStatement pStatement = conn.prepareStatement(query);
+            pStatement.setString(1, txnId);
+            pStatement.setString(2, txnQuery);
+            status = pStatement.execute();
+            conn.commit();
+        } catch (SQLException throwables) {
+            status = false;
+        }
+        return status;
+    }
+
+    public boolean deleteRedoLog(String txnId) {
+        boolean status = false;
+        String query = "delete from RedoLog where txnId=?";
+        try {
+            PreparedStatement pStatement = conn.prepareStatement(query);
+            pStatement.setString(1, txnId);
+            status = pStatement.execute();
+            conn.commit();
+        } catch (SQLException throwables) {
+            status = false;
+        }
+        return status;
+    }
+
+    public boolean insertProtocolLog(String txnId, String coId, String st) {
+        boolean status = false;
+        String query = "insert into ProtocolLog (txnId, cohortId, status) values (?, ?, ?)";
+        try {
+            PreparedStatement pStatement = conn.prepareStatement(query);
+            pStatement.setString(1, txnId);
+            pStatement.setString(2, coId);
+            pStatement.setString(3, st);
+            status = pStatement.execute();
+            conn.commit();
+        } catch (SQLException throwables) {
+            status = false;
+        }
+        return status;
+    }
+
+    public boolean deleteProtocolLog(String txnId) {
+        boolean status = false;
+        String query = "delete from ProtocolLog where txnId=?";
+        try {
+            PreparedStatement pStatement = conn.prepareStatement(query);
+            pStatement.setString(1, txnId);
+            status = pStatement.execute();
+            conn.commit();
+        } catch (SQLException throwables) {
+            status = false;
+        }
+        return status;
+    }
+
+    public int updateProtocolLog(String txnId, String coId, String stat) {
+        String query = "update ProtocolLog set status=? where txnId=? and cohortId=?";
+        int status = 0;
+        try {
+            PreparedStatement pStmt = conn.prepareStatement(query);
+            pStmt.setString(1, stat);
+            pStmt.setString(2, txnId);
+            pStmt.setString(3, coId);
+            status = pStmt.executeUpdate();
+        } catch (SQLException throwables) {
+            return -1;
+        }
+        return status;
+    }
+
+    public String getProtocolLogStatus(String txnId, String cohortId) { // txnId, cohortId
+        String status="";
+        String query = "select status from ProtocolLog where txnId=? and cohortId=?";
+        PreparedStatement prepStmt = null;
+        try {
+            prepStmt = conn.prepareStatement(query);
+            prepStmt.setString(1, txnId);
+            prepStmt.setString(2, cohortId);
+            ResultSet rs = prepStmt.executeQuery();
+            while(rs.next()) {
+                status = rs.getString(0);
+                break;
+            }
+        } catch (SQLException throwables) {
+            return "";
+        }
+        return status;
+    }
+
+    public List<String> getProtocolLogByTxnIDs(String status) { // txnId, cohortId
+        List<String> res = new ArrayList<>();
+        String query = "select txnId from ProtocolLog where status=?";
+        PreparedStatement prepStmt = null;
+        try {
+            prepStmt = conn.prepareStatement(query);
+            prepStmt.setString(1, status);
+            ResultSet rs = prepStmt.executeQuery();
+            while(rs.next()) {
+                res.add(rs.getString(0));
+            }
+        } catch (SQLException throwables) {
+            return res;
+        }
+        return res;
+    }
+
+    public boolean insertCohortLog(String txnId, String st) {
+        boolean status = false;
+        String query = "insert into CohortLog (txnId, status) values (?, ?)";
+        try {
+            PreparedStatement pStatement = conn.prepareStatement(query);
+            pStatement.setString(1, txnId);
+            pStatement.setString(2, st);
+            status = pStatement.execute();
+            conn.commit();
+        } catch (SQLException throwables) {
+            status = false;
+        }
+        return status;
+    }
+
+    public boolean deleteCohortLog(String txnId) {
+        boolean status = false;
+        String query = "delete from CohortLog where txnId=?";
+        try {
+            PreparedStatement pStatement = conn.prepareStatement(query);
+            pStatement.setString(1, txnId);
+            status = pStatement.execute();
+            conn.commit();
+        } catch (SQLException throwables) {
+            status = false;
+        }
+        return status;
+    }
+
+    public int updateCohortLog(String txnId, String stat) {
+        String query = "update CohortLog set status=? where txnId=??";
+        int status = 0;
+        try {
+            PreparedStatement pStmt = conn.prepareStatement(query);
+            pStmt.setString(1, stat);
+            pStmt.setString(2, txnId);
+            status = pStmt.executeUpdate();
+        } catch (SQLException throwables) {
+            return -1;
+        }
+        return status;
+    }
+
+}
