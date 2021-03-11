@@ -85,14 +85,15 @@ public class DB {
         Statement statement;
 
         List<String> st = request.getStatementList();
-        StringBuilder strBui = new StringBuilder("prepare transaction ");
-        strBui.append(request.getId()).append(";").append(String.join(";", st));
+        StringBuilder strBui = new StringBuilder("prepare transaction '");
+        strBui.append(request.getId()).append("' ; ").append(String.join(";", st));
 //        insertRedoLog(request.getId(), strBui.toString());
 
         try {
             statement = conn.createStatement();
             status = statement.execute(strBui.toString());
         } catch(SQLException e) {
+            e.printStackTrace();
             return status;
         }
 
@@ -106,6 +107,7 @@ public class DB {
             statement = conn.createStatement();
             status = statement.execute("commit prepared " + request.getId());
         } catch(SQLException e) {
+            e.printStackTrace();
             return status;
         }
 
@@ -119,6 +121,7 @@ public class DB {
             statement = conn.createStatement();
             status = statement.execute("rollback prepared " + request.getId());
         } catch(SQLException e) {
+            e.printStackTrace();
             return status;
         }
 
@@ -134,7 +137,8 @@ public class DB {
             pStatement.setString(2, txnQuery);
             status = pStatement.execute();
             conn.commit();
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             status = false;
         }
         return status;
@@ -148,7 +152,8 @@ public class DB {
             pStatement.setString(1, txnId);
             status = pStatement.execute();
             conn.commit();
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             status = false;
         }
         return status;
@@ -164,7 +169,8 @@ public class DB {
             pStatement.setString(3, st);
             status = pStatement.execute();
             conn.commit();
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             status = false;
         }
         return status;
@@ -178,7 +184,8 @@ public class DB {
             pStatement.setString(1, txnId);
             status = pStatement.execute();
             conn.commit();
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             status = false;
         }
         return status;
@@ -193,7 +200,8 @@ public class DB {
             pStmt.setString(2, txnId);
             pStmt.setInt(3, coId);
             status = pStmt.executeUpdate();
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             return -1;
         }
         return status;
@@ -212,7 +220,8 @@ public class DB {
                 status = rs.getString(0);
                 break;
             }
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             return "";
         }
         return status;
@@ -229,7 +238,8 @@ public class DB {
             while(rs.next()) {
                 res.add(rs.getString(0));
             }
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             return res;
         }
         return res;
@@ -244,7 +254,8 @@ public class DB {
             pStatement.setString(2, st);
             status = pStatement.execute();
             conn.commit();
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             status = false;
         }
         return status;
@@ -258,7 +269,8 @@ public class DB {
             pStatement.setString(1, txnId);
             status = pStatement.execute();
             conn.commit();
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             status = false;
         }
         return status;
@@ -272,7 +284,8 @@ public class DB {
             pStmt.setString(1, stat);
             pStmt.setString(2, txnId);
             status = pStmt.executeUpdate();
-        } catch (SQLException throwables) {
+        } catch (SQLException e) {
+            e.printStackTrace();
             return -1;
         }
         return status;

@@ -9,7 +9,7 @@ import java.sql.SQLException;
 public class CohortServer {
 
     public static void main(String[] args) throws IOException, SQLException, InterruptedException {
-        System.out.println(args.length);
+//        System.out.println(args.length);
         if (args.length!=1) {
             System.out.println("Input cohort host ID (1, 2, 3).");
         }
