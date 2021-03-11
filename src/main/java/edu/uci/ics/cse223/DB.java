@@ -85,7 +85,7 @@ public class DB {
         Statement statement;
 
         List<String> st = request.getStatementList();
-        StringBuilder strBui = new StringBuilder("prepare transaction '");
+        StringBuilder strBui = new StringBuilder("BEGIN; prepare transaction '");
         strBui.append(request.getId()).append("' ; ").append(String.join(";", st));
 //        insertRedoLog(request.getId(), strBui.toString());
 
@@ -105,7 +105,7 @@ public class DB {
         Statement statement;
         try {
             statement = conn.createStatement();
-            status = statement.execute("commit prepared " + request.getId());
+            status = statement.execute("commit prepared '" + request.getId()+"'");
         } catch(SQLException e) {
             e.printStackTrace();
             return status;
@@ -119,7 +119,7 @@ public class DB {
         Statement statement;
         try {
             statement = conn.createStatement();
-            status = statement.execute("rollback prepared " + request.getId());
+            status = statement.execute("rollback prepared '" + request.getId()+"'");
         } catch(SQLException e) {
             e.printStackTrace();
             return status;
