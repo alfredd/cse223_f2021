@@ -10,16 +10,17 @@ public class DB {
 
     private final Connection conn;
 
-    public DB (int hostID) throws IOException, SQLException {
+    public DB(int hostID) throws IOException, SQLException {
         ConfigurationManager cm = new ConfigurationManager();
         String dbUrl = cm.getDBUrl(hostID);
         String dbUsername = cm.getDBUsername();
         String dbPassword = cm.getDBPassword();
-        String url = "jdbc:postgresql://"+dbUrl;
+        String url = "jdbc:postgresql://" + dbUrl;
         Properties props = new Properties();
-        props.setProperty("user",dbUsername);
-        props.setProperty("password",dbPassword);
-        props.setProperty("ssl","false");
+        props.setProperty("user", dbUsername);
+        props.setProperty("password", dbPassword);
+        props.setProperty("ssl", "false");
+        props.setProperty("isolation", "SERIALIZABLE");
         conn = DriverManager.getConnection(url, props);
         conn.setAutoCommit(Boolean.FALSE);
         createDatabaseTables();
@@ -57,7 +58,7 @@ public class DB {
                         " txnId varchar(25) NOT NULL, " +
                         " status varchar(25) NOT NULL)"
         };
-        for(String s : SQL_CREATE_TABLES) {
+        for (String s : SQL_CREATE_TABLES) {
             createTable(s);
         }
     }
@@ -82,7 +83,7 @@ public class DB {
 
     public boolean prepareSQL(Twopc.SQL request) {
         boolean status = false;
-        Statement statement;
+        Statement statement = null;
 
         List<String> st = request.getStatementList();
         StringBuilder strBui = new StringBuilder("BEGIN; prepare transaction '");
@@ -91,10 +92,23 @@ public class DB {
 
         try {
             statement = conn.createStatement();
-            status = statement.execute(strBui.toString());
-        } catch(SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
-            return status;
+        }
+        try {
+            if (statement != null)
+                statement.execute(strBui.toString());
+            status = true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            status = false;
+        }
+        if (!status) {
+            try {
+                statement.execute("ROLLBACK PREPARED '" + request.getId() + "';");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
         return status;
@@ -105,10 +119,11 @@ public class DB {
         Statement statement;
         try {
             statement = conn.createStatement();
-            status = statement.execute("commit prepared '" + request.getId()+"'");
-        } catch(SQLException e) {
+            statement.execute("commit prepared '" + request.getId() + "'");
+            status = true;
+        } catch (SQLException e) {
             e.printStackTrace();
-            return status;
+            status = false;
         }
 
         return status;
@@ -119,10 +134,11 @@ public class DB {
         Statement statement;
         try {
             statement = conn.createStatement();
-            status = statement.execute("rollback prepared '" + request.getId()+"'");
-        } catch(SQLException e) {
+            statement.execute("rollback prepared '" + request.getId() + "'");
+            status = true;
+        } catch (SQLException e) {
             e.printStackTrace();
-            return status;
+            status = false;
         }
 
         return status;
@@ -208,7 +224,7 @@ public class DB {
     }
 
     public String getProtocolLogStatus(String txnId, String cohortId) { // txnId, cohortId
-        String status="";
+        String status = "";
         String query = "select status from ProtocolLog where txnId=? and cohortId=?";
         PreparedStatement prepStmt = null;
         try {
@@ -216,7 +232,7 @@ public class DB {
             prepStmt.setString(1, txnId);
             prepStmt.setString(2, cohortId);
             ResultSet rs = prepStmt.executeQuery();
-            while(rs.next()) {
+            while (rs.next()) {
                 status = rs.getString(0);
                 break;
             }
@@ -235,7 +251,7 @@ public class DB {
             prepStmt = conn.prepareStatement(query);
             prepStmt.setString(1, status);
             ResultSet rs = prepStmt.executeQuery();
-            while(rs.next()) {
+            while (rs.next()) {
                 res.add(rs.getString(0));
             }
         } catch (SQLException e) {
@@ -277,7 +293,7 @@ public class DB {
     }
 
     public int updateCohortLog(String txnId, String stat) {
-        String query = "update CohortLog set status=? where txnId=??";
+        String query = "update CohortLog set status=? where txnId=?";
         int status = 0;
         try {
             PreparedStatement pStmt = conn.prepareStatement(query);
