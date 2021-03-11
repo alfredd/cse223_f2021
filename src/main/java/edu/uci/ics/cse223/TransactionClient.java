@@ -37,12 +37,20 @@ public class TransactionClient {
     }
 
     public static void main(String[] args) throws IOException {
+
+
+        /**
+         * For every 10 txns
+         * SQL.addstatement(insert)
+         * add txn_i as txnid
+         * client.executeTransaction(request).
+         */
         TransactionClient client = new TransactionClient();
-        Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("thermometer5")
+        Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("t91")
                 .addStatement(
                         "INSERT INTO thermometerobservation VALUES " +
-                                "('54fd1b36-84a1-4848-8bcf-cb165b2af698', 80, '2017-11-08 00:00:00', 'thermometer5');")
-                .addStatement("INSERT INTO thermometerobservation VALUES ('dffa33b8-93cc-46b0-83bb-2e8bb2fb2c61', 8, '2017-11-08 05:38:00', 'thermometer5');")
+                                "('19', 80, '2017-11-08 00:00:00', 't91')")
+//                .addStatement("INSERT INTO thermometerobservation VALUES ('16', 8, '2017-11-08 05:38:00', 't8')")
                 .build();
          client.executeTransaction(transaction);
     }
