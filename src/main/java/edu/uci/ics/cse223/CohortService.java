@@ -56,14 +56,34 @@ public class CohortService extends CohortGrpc.CohortImplBase {
 
     @Override
     public void commit(Twopc.SQL request, StreamObserver<Twopc.SQL> responseObserver) {
-        //boolean = DB.commitSQL(request);
-        super.commit(request, responseObserver);
+        db.updateCohortLog(request.getId(), Twopc.Status.COMMIT.toString());
+        boolean status = db.commitSQL(request);
+        Twopc.Status responseStatus;
+        if (status) {
+            db.updateCohortLog(request.getId(), Twopc.Status.COMMITTED.toString());
+        } else {
+            System.out.println("Commit PREPARED failed.");
+        }
+        responseStatus = Twopc.Status.DONE;
+        Twopc.SQL resp = Twopc.SQL.newBuilder().setId(request.getId()).setAgentID(this.id).setStatus(responseStatus).build();
+        responseObserver.onNext(resp);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void abort(Twopc.SQL request, StreamObserver<Twopc.SQL> responseObserver) {
-        //boolean = DB.abortSQL(request);
-        super.abort(request, responseObserver);
+        db.updateCohortLog(request.getId(), Twopc.Status.ABORT.toString());
+        boolean status = db.abortSQL(request);
+        Twopc.Status responseStatus;
+        if (status) {
+            db.updateCohortLog(request.getId(), Twopc.Status.ABORTED.toString());
+        } else {
+            System.out.println("DB ROLLBACK failed.");
+        }
+        responseStatus = Twopc.Status.ABORTED;
+        Twopc.SQL resp = Twopc.SQL.newBuilder().setId(request.getId()).setAgentID(this.id).setStatus(responseStatus).build();
+        responseObserver.onNext(resp);
+        responseObserver.onCompleted();
     }
 }
 
