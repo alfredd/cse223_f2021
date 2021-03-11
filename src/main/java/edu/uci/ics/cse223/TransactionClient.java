@@ -46,7 +46,7 @@ public class TransactionClient {
         try {
             TransactionClient client = new TransactionClient();
             reader = new BufferedReader(new FileReader(
-                    new File(System.getProperty("user.dir") + "/observations.sql"))
+                    new File(args[0]))
             );
             line = reader.readLine();
             int cnt = 0, txnId = 0;
