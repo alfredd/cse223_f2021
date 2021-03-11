@@ -96,9 +96,10 @@ public class DB {
             e.printStackTrace();
         }
         try {
-            if (statement != null)
+            if (statement != null) {
                 statement.execute(strBui.toString());
-            status = true;
+                status = true;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             status = false;
@@ -119,7 +120,7 @@ public class DB {
         Statement statement;
         try {
             statement = conn.createStatement();
-            statement.execute("commit prepared '" + request.getId() + "'");
+            statement.executeQuery("commit prepared '" + request.getId() + "'");
             status = true;
         } catch (SQLException e) {
             e.printStackTrace();
