@@ -22,7 +22,7 @@ public class DB {
         props.setProperty("ssl", "false");
         props.setProperty("isolation", "SERIALIZABLE");
         conn = DriverManager.getConnection(url, props);
-        conn.setAutoCommit(Boolean.FALSE);
+        conn.setAutoCommit(Boolean.TRUE);
         createDatabaseTables();
     }
 
@@ -67,7 +67,7 @@ public class DB {
         try {
             Statement statement = conn.createStatement();
             statement.execute(SQL_CREATE_TABLE);
-            conn.commit();
+//            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -120,7 +120,7 @@ public class DB {
         Statement statement;
         try {
             statement = conn.createStatement();
-            statement.executeQuery("commit prepared '" + request.getId() + "'");
+            statement.executeUpdate("commit prepared '" + request.getId() + "'");
             status = true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -153,7 +153,7 @@ public class DB {
             pStatement.setString(1, txnId);
             pStatement.setString(2, txnQuery);
             status = pStatement.execute();
-            conn.commit();
+//            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
             status = false;
@@ -168,7 +168,7 @@ public class DB {
             PreparedStatement pStatement = conn.prepareStatement(query);
             pStatement.setString(1, txnId);
             status = pStatement.execute();
-            conn.commit();
+//            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
             status = false;
@@ -185,7 +185,7 @@ public class DB {
             pStatement.setInt(2, coId);
             pStatement.setString(3, st);
             status = pStatement.execute();
-            conn.commit();
+//            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
             status = false;
@@ -200,7 +200,7 @@ public class DB {
             PreparedStatement pStatement = conn.prepareStatement(query);
             pStatement.setString(1, txnId);
             status = pStatement.execute();
-            conn.commit();
+//            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
             status = false;
@@ -270,7 +270,7 @@ public class DB {
             pStatement.setString(1, txnId);
             pStatement.setString(2, st);
             status = pStatement.execute();
-            conn.commit();
+//            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
             status = false;
@@ -285,7 +285,7 @@ public class DB {
             PreparedStatement pStatement = conn.prepareStatement(query);
             pStatement.setString(1, txnId);
             status = pStatement.execute();
-            conn.commit();
+//            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
             status = false;
