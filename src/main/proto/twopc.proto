@@ -32,7 +32,7 @@ message Transaction {
 }
 
 message HashedQuery {
-    repeated string statement = 1;
+    string statement = 1;
     int32 hash = 2;
 }
 message TransactionStatus {
