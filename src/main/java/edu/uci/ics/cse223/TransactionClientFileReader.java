@@ -1,11 +1,10 @@
 package edu.uci.ics.cse223;
 
 import java.io.*;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class TransactionClientFileReader {
+    private ConfigurationManager configManager;
     private String fileURL;
     private BufferedReader reader;
     private StringBuilder query;
@@ -19,6 +18,7 @@ public class TransactionClientFileReader {
         uniqueSensorIds = new HashSet<>();
         line = "";
         try {
+            configManager = new ConfigurationManager();
             client = new TransactionClient();
         } catch (IOException e) {
             e.printStackTrace();
@@ -28,32 +28,68 @@ public class TransactionClientFileReader {
     public void parseFileAndExecute() {
         openFile();
         getUniqueSensorId();
-        for(String sensorId : uniqueSensorIds) {
+        for (String sensorId : uniqueSensorIds) {
             createTransaction(sensorId);
         }
     }
 
+    // INSERT INTO thermometerobservation VALUES ('54fd1b36-84a1-4848-8bcf-cb165b2af698', 80, '2017-11-08 00:00:00', '1');
     private void createTransaction(String sensorId) {
-//        List<Twopc.HashedQuery> hashedQueries =
+        System.out.println(sensorId);
+        int hashVal = 0;
+        String[] tmpStmts;
+        String tmpDate = "", tmpStmt = "";
+        Hashtable<Integer, String> hashTable = new Hashtable<>();
+        List<Twopc.HashedQuery> hashedQueries = new ArrayList<>();
+        openFile();
         try {
             line = reader.readLine();
             int cnt = 0, txnId = 0;
             while (line != null) {
-                if (line.toLowerCase().contains("insert")) {
-                    query.append(line).append(";");
+                if (line.toLowerCase().contains("insert") && line.contains("\'" + sensorId + "\'")) {
+                    tmpStmts = line.split(",");
+                    tmpDate = tmpStmts[tmpStmts.length - 2];
+                    tmpDate = tmpDate.substring(tmpDate.indexOf("\'") + 1, tmpDate.lastIndexOf("\'"));
+                    hashVal = calculateHash(sensorId, tmpDate);
+                    if (hashTable.containsKey(hashVal)) {
+                        tmpStmt = hashTable.get(hashVal);
+                        tmpStmt = tmpStmt + ";" + line;
+                        hashTable.replace(hashVal, tmpStmt);
+                    } else {
+                        hashTable.put(hashVal, line);
+                    }
                     cnt++;
                 }
-                line = reader.readLine();
-                if (cnt == 10) {
+                if (cnt == configManager.getMaxTxnStatements()) {
                     txnId++;
+                    System.out.println(hashTable.toString());
+                    System.out.println("----------------");
+
+                    hashTable.forEach((k, v) ->{
+                        hashedQueries.add(
+                                Twopc.HashedQuery.newBuilder()
+                                        .setHash(k)
+                                        .addStatement(v)
+                                        .build()
+                                );
+                    });
+
+                    
+
+
 //                    Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("t" + String.valueOf(txnId))
 //                            .addStatement(query.toString())
 //                            .build();
 //                    client.executeTransaction(transaction);
                     cnt = 0;
-                    query.delete(0, query.length());
+                    tmpStmt = "";
+                    tmpDate = "";
+                    hashTable.clear();
+                    hashedQueries.clear();
+                    tmpStmts = null;
+                    hashVal = 0;
                 }
-
+                line = reader.readLine();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -71,7 +107,7 @@ public class TransactionClientFileReader {
     }
 
     private void getUniqueSensorId() {
-        String [] tmpArray;
+        String[] tmpArray;
         String tmpSensorID = "";
         try {
             line = reader.readLine();
@@ -79,7 +115,7 @@ public class TransactionClientFileReader {
                 if (line.toLowerCase().contains("insert")) {
                     tmpArray = line.split(",");
                     tmpSensorID = tmpArray[tmpArray.length - 1];
-                    tmpSensorID = tmpSensorID.substring(tmpSensorID.indexOf("\'")+1, tmpSensorID.lastIndexOf("\'"));
+                    tmpSensorID = tmpSensorID.substring(tmpSensorID.indexOf("\'") + 1, tmpSensorID.lastIndexOf("\'"));
                     uniqueSensorIds.add(tmpSensorID);
                 }
                 line = reader.readLine();
@@ -90,7 +126,9 @@ public class TransactionClientFileReader {
     }
 
     private int calculateHash(String sensorId, String timeStamp) {
-        return Objects.hash(sensorId, timeStamp);
+        int a = 0;
+        a = Objects.hash(sensorId, timeStamp);
+        return ((a < 0 ? (-1 * a) : a) % 3) + 1;
     }
 }
 //INSERT INTO thermometerobservation VALUES ('54fd1b36-84a1-4848-8bcf-cb165b2af698', 80, '2017-11-08 00:00:00', '30cced27_6cd1_4d82_9894_bddbb71a4402');
@@ -99,7 +137,7 @@ public class TransactionClientFileReader {
 class DEMO {
     public static void main(String[] args) {
         TransactionClientFileReader t = new TransactionClientFileReader(
-                new File(System.getProperty("user.dir") + "/observations.sql").getPath()
+                new File(System.getProperty("user.dir") + "/testqueries.sql").getPath()
         );
         t.parseFileAndExecute();
     }
