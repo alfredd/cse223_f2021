@@ -29,8 +29,8 @@ public class TransactionClient {
         return !channel.isTerminated();
     }
 
-    public void executeTransaction(Twopc.SQL transactionSQL) {
-        Twopc.TransactionStatus response = blockingStub.executeTransaction(transactionSQL);
+    public void executeTransaction(Twopc.Transaction transaction) {
+        Twopc.TransactionStatus response = blockingStub.executeTransaction(transaction);
         if (response.getStatus() == Twopc.Status.COMMITTED) {
             System.out.println("Transaction committed. ");
         } else {
