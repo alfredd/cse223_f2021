@@ -35,7 +35,7 @@ public class TransactionService extends TransactionServiceGrpc.TransactionServic
     }
 
     @Override
-    public void executeTransaction(Twopc.SQL request, StreamObserver<Twopc.TransactionStatus> responseObserver) {
+    public void executeTransaction(Twopc.Transaction request, StreamObserver<Twopc.TransactionStatus> responseObserver) {
         /**
          * To handle individual transactions, create individual threads. ThreadLooper.
          * Log incoming transactions.
@@ -49,12 +49,12 @@ public class TransactionService extends TransactionServiceGrpc.TransactionServic
 
 
 class TransactionExecutor implements Runnable {
-    private final Twopc.SQL request;
+    private final Twopc.Transaction request;
     private final StreamObserver<Twopc.TransactionStatus> responseObserver;
     private final DB db;
     private final CohortManager cm;
 
-    public TransactionExecutor(Twopc.SQL request, StreamObserver<Twopc.TransactionStatus> responseObserver, DB db, CohortManager cm) {
+    public TransactionExecutor(Twopc.Transaction request, StreamObserver<Twopc.TransactionStatus> responseObserver, DB db, CohortManager cm) {
         this.request = request;
         this.responseObserver = responseObserver;
         this.db = db;
@@ -70,25 +70,25 @@ class TransactionExecutor implements Runnable {
          * 1. TxnID, TxnStmts
          * 2. TxnID, CohortID, Status (PREPARE, COMMIT)
          */
-        String txnQuery = String.join(";", request.getStatementList());
+/*        String txnQuery = String.join(";", request.getStatementList());
         db.insertRedoLog(request.getId(),txnQuery );
         Twopc.SQL prepareResponse = cm.sendPrepare(request);
         if (prepareResponse.getStatus()== Twopc.Status.COMMIT) {
             Twopc.SQL commitResponse = cm.sendCommit(prepareResponse);
-            /**
+            *//**
              * Delete transaction entries from log.
-             */
+             *//*
 //            db.deleteRedoLog(request.getId());
 //            db.deleteProtocolLog(request.getId());
             responseObserver.onNext(Twopc.TransactionStatus.newBuilder().setStatus(Twopc.Status.COMMITTED).build());
             responseObserver.onCompleted();
         } else {
-            /**
+            *//**
              * Update Txn Entries to ABORT.
-             */
+             *//*
             Twopc.SQL abortResponse = cm.sendAbort(Twopc.SQL.newBuilder(prepareResponse).setStatus(Twopc.Status.ABORT).build());
             responseObserver.onNext(Twopc.TransactionStatus.newBuilder().setStatus(Twopc.Status.ABORTED).build());
             responseObserver.onCompleted();
-        }
+        }*/
     }
 }

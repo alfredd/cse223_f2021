@@ -32,4 +32,8 @@ public class ConfigurationManager {
         return p.getProperty("password");
     }
 
+    public int getMaxTxnStatements() {
+        return Integer.decode(p.getProperty("max_txn"));
+    }
+
 }
