@@ -3,9 +3,6 @@ package edu.uci.ics.cse223;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -40,35 +37,38 @@ public class TransactionClient {
     }
 
     public static void main(String[] args) {
-        BufferedReader reader;
-        String line = "";
-        StringBuilder query = new StringBuilder("");
-        try {
-            TransactionClient client = new TransactionClient();
-            reader = new BufferedReader(new FileReader(
-                    new File(args[0]))
-            );
-            line = reader.readLine();
-            int cnt = 0, txnId = 0;
-            while (line != null) {
-                if (line.toLowerCase().contains("insert")) {
-                    query.append(line).append(";");
-                    cnt++;
-                }
-                line = reader.readLine();
-                if (cnt == 10) {
-                    txnId++;
-                    Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("t" + String.valueOf(txnId))
-                            .addStatement(query.toString())
-                            .build();
-                    client.executeTransaction(transaction);
-                    cnt = 0;
-                    query.delete(0, query.length());
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        TransactionClientFileReader clientFileReader = new TransactionClientFileReader(args[0]);
+        clientFileReader.parseFileAndExecute();
+
+//        BufferedReader reader;
+//        String line = "";
+//        StringBuilder query = new StringBuilder("");
+//        try {
+//            TransactionClient client = new TransactionClient();
+//            reader = new BufferedReader(new FileReader(
+//                    new File(args[0]))
+//            );
+//            line = reader.readLine();
+//            int cnt = 0, txnId = 0;
+//            while (line != null) {
+//                if (line.toLowerCase().contains("insert")) {
+//                    query.append(line).append(";");
+//                    cnt++;
+//                }
+//                line = reader.readLine();
+//                if (cnt == 10) {
+//                    txnId++;
+////                    Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("t" + String.valueOf(txnId))
+////                            .addStatement(query.toString())
+////                            .build();
+////                    client.executeTransaction(transaction);
+//                    cnt = 0;
+//                    query.delete(0, query.length());
+//                }
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
 
 //        TransactionClient client = new TransactionClient();
