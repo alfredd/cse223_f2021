@@ -68,7 +68,7 @@ public class TransactionClientFileReader {
                         hashedQueries.add(
                                 Twopc.HashedQuery.newBuilder()
                                         .setHash(k)
-                                        .addStatement(v)
+                                        .setStatement(v)
                                         .build()
                         );
                     });
