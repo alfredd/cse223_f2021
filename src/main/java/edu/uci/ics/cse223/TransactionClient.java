@@ -39,45 +39,5 @@ public class TransactionClient {
     public static void main(String[] args) {
         TransactionClientFileReader clientFileReader = new TransactionClientFileReader(args[0]);
         clientFileReader.parseFileAndExecute();
-
-//        BufferedReader reader;
-//        String line = "";
-//        StringBuilder query = new StringBuilder("");
-//        try {
-//            TransactionClient client = new TransactionClient();
-//            reader = new BufferedReader(new FileReader(
-//                    new File(args[0]))
-//            );
-//            line = reader.readLine();
-//            int cnt = 0, txnId = 0;
-//            while (line != null) {
-//                if (line.toLowerCase().contains("insert")) {
-//                    query.append(line).append(";");
-//                    cnt++;
-//                }
-//                line = reader.readLine();
-//                if (cnt == 10) {
-//                    txnId++;
-////                    Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("t" + String.valueOf(txnId))
-////                            .addStatement(query.toString())
-////                            .build();
-////                    client.executeTransaction(transaction);
-//                    cnt = 0;
-//                    query.delete(0, query.length());
-//                }
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
-
-//        TransactionClient client = new TransactionClient();
-//        Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("t91")
-//                .addStatement(
-//                        "INSERT INTO thermometerobservation VALUES " +
-//                                "('19', 80, '2017-11-08 00:00:00', 't91')")
-////                .addStatement("INSERT INTO thermometerobservation VALUES ('16', 8, '2017-11-08 05:38:00', 't8')")
-//                .build();
-//         client.executeTransaction(transaction);
     }
 }

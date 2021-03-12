@@ -62,25 +62,26 @@ public class TransactionClientFileReader {
                 }
                 if (cnt == configManager.getMaxTxnStatements()) {
                     txnId++;
-                    System.out.println(hashTable.toString());
-                    System.out.println("----------------");
+//                    System.out.println(hashTable.toString());
 
-                    hashTable.forEach((k, v) ->{
+                    hashTable.forEach((k, v) -> {
                         hashedQueries.add(
                                 Twopc.HashedQuery.newBuilder()
                                         .setHash(k)
                                         .addStatement(v)
                                         .build()
-                                );
+                        );
                     });
 
-                    
+                    Twopc.Transaction transaction = Twopc.Transaction.newBuilder()
+                            .addAllStatement(hashedQueries)
+                            .setId("txn-" + txnId + "-" + sensorId).build();
 
+//                    System.out.println(transaction.toString());
+//                    System.out.println("-------------------------");
 
-//                    Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("t" + String.valueOf(txnId))
-//                            .addStatement(query.toString())
-//                            .build();
-//                    client.executeTransaction(transaction);
+                    client.executeTransaction(transaction);
+
                     cnt = 0;
                     tmpStmt = "";
                     tmpDate = "";
@@ -131,45 +132,12 @@ public class TransactionClientFileReader {
         return ((a < 0 ? (-1 * a) : a) % 3) + 1;
     }
 }
-//INSERT INTO thermometerobservation VALUES ('54fd1b36-84a1-4848-8bcf-cb165b2af698', 80, '2017-11-08 00:00:00', '30cced27_6cd1_4d82_9894_bddbb71a4402');
-//INSERT INTO thermometerobservation VALUES ('a239a033-b340-426d-a686-ad32908709ae', 48, '2017-11-08 00:00:00', '9592a785_d3a4_4de2_bc3d_cfa1a127bf40');
 
-class DEMO {
-    public static void main(String[] args) {
-        TransactionClientFileReader t = new TransactionClientFileReader(
-                new File(System.getProperty("user.dir") + "/testqueries.sql").getPath()
-        );
-        t.parseFileAndExecute();
-    }
-}
-
-
-//        BufferedReader reader;
-//        String line = "";
-//        StringBuilder query = new StringBuilder("");
-//        try {
-//            TransactionClient client = new TransactionClient();
-//            reader = new BufferedReader(new FileReader(
-//                    new File(args[0]))
-//            );
-//            line = reader.readLine();
-//            int cnt = 0, txnId = 0;
-//            while (line != null) {
-//                if (line.toLowerCase().contains("insert")) {
-//                    query.append(line).append(";");
-//                    cnt++;
-//                }
-//                line = reader.readLine();
-//                if (cnt == 10) {
-//                    txnId++;
-////                    Twopc.SQL transaction = Twopc.SQL.newBuilder().setId("t" + String.valueOf(txnId))
-////                            .addStatement(query.toString())
-////                            .build();
-////                    client.executeTransaction(transaction);
-//                    cnt = 0;
-//                    query.delete(0, query.length());
-//                }
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+//class DEMO {
+//    public static void main(String[] args) {
+//        TransactionClientFileReader t = new TransactionClientFileReader(
+//                new File(System.getProperty("user.dir") + "/testqueries.sql").getPath()
+//        );
+//        t.parseFileAndExecute();
+//    }
+//}
