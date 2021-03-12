@@ -49,6 +49,7 @@ public class DB {
                         "  PRIMARY KEY (id))",
                 "CREATE TABLE IF NOT EXISTS RedoLog (" +
                         " txnId varchar(25) NOT NULL," +
+                        " cohortId varchar(25) NOT NULL," +
                         " txnStatement varchar(255) NOT NULL)",
                 "CREATE TABLE IF NOT EXISTS ProtocolLog (" +
                         " txnId varchar(25) NOT NULL, " +
@@ -145,18 +146,22 @@ public class DB {
         return status;
     }
 
-    public boolean insertRedoLog(String txnId, String txnQuery) {
+    public boolean insertRedoLog(String txnId, List<Twopc.HashedQuery> txnQuery) {
         boolean status = false;
-        String query = "insert into RedoLog (txnId, txnStatement) values (?, ?)";
-        try {
-            PreparedStatement pStatement = conn.prepareStatement(query);
-            pStatement.setString(1, txnId);
-            pStatement.setString(2, txnQuery);
-            status = pStatement.execute();
+        String preparedQuery = "insert into RedoLog (txnId, cohortId, txnStatement) values (?, ? ,?)";
+        for (Twopc.HashedQuery query: txnQuery) {
+
+            try {
+                PreparedStatement pStatement = conn.prepareStatement(preparedQuery);
+                pStatement.setString(1, txnId);
+                pStatement.setInt(2, query.getHash());
+                pStatement.setString(3, query.getStatement());
+                status = pStatement.execute();
 //            conn.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            status = false;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                status = false;
+            }
         }
         return status;
     }

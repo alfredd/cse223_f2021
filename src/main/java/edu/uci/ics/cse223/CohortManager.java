@@ -20,40 +20,77 @@ public class CohortManager {
         }
     }
 
-    public Twopc.SQL sendPrepare(final Twopc.SQL request) {
+    public TxnState sendPrepare(final Twopc.Transaction request) {
         Twopc.SQL finalResponse = null;
-        for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
+        TxnState state = new TxnState();
+        state.status= Twopc.Status.COMMIT;
+        state.txnID = request.getId();
+        for (Twopc.HashedQuery hashedQuery : request.getStatementList()) {
+            Integer cohortID = hashedQuery.getHash();
+            CohortClient client = cohortClientMap.get(cohortID);
+            db.insertProtocolLog(request.getId(), cohortID, Twopc.Status.PREPARE.toString());
+            Twopc.SQL prepareResponse = client.prepare(
+                    Twopc.SQL.newBuilder()
+                            .setId(request.getId())
+                            .setAgentID(cohortID)
+                            .addStatement(hashedQuery.getStatement())
+                            .build());
+            db.updateProtocolLog(request.getId(), cohortID, prepareResponse.getStatus().toString());
+            state.addTxnState(cohortID, prepareResponse.getStatus());
+            if (prepareResponse.getStatus()== Twopc.Status.ABORT) {
+                state.status=prepareResponse.getStatus();
+            }
+        }
+/*        for (Map.Entry<Integer, CohortClient> client : cohortClientMap.entrySet()) {
             Integer cohortID = client.getKey();
             db.insertProtocolLog(request.getId(), cohortID, Twopc.Status.PREPARE.toString());
             Twopc.SQL response = client.getValue().prepare(request);
             db.updateProtocolLog(request.getId(), cohortID, response.getStatus().toString());
-            if (response.getStatus()== Twopc.Status.ABORT) {
+            if (response.getStatus() == Twopc.Status.ABORT) {
                 finalResponse = Twopc.SQL.newBuilder(response).build();
             }
-        }
-        if (finalResponse==null) {
+        }*/
+/*        if (finalResponse == null) {
             finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.COMMIT).setId(request.getId()).build();
-        }
+        }*/
 
-        return finalResponse;
+        return state;
     }
 
-    public Twopc.SQL sendCommit(final Twopc.SQL request) {
-        Twopc.SQL finalResponse = null;
-        for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
-            Integer cohortID = client.getKey();
-            db.updateProtocolLog(request.getId(), cohortID, Twopc.Status.COMMITTED.toString());
-            Twopc.SQL response = client.getValue().commit(request);
+    public TxnState sendCommit(final TxnState request) {
+
+        for (TxnResp prepareResponses : request.txnResps) {
+            Integer cohortID = prepareResponses.cohortID;
+            CohortClient client = cohortClientMap.get(cohortID);
+            db.updateProtocolLog(request.txnID, cohortID, Twopc.Status.COMMITTED.toString());
+            Twopc.SQL response = client.commit(
+                    Twopc.SQL.newBuilder()
+                            .setAgentID(cohortID)
+                            .setId(request.txnID)
+                            .setStatus(Twopc.Status.COMMITTED)
+                            .build());
             db.updateProtocolLog(response.getId(), cohortID, response.getStatus().toString());
         }
-        finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.DONE).setId(request.getId()).build();
-
-        return finalResponse;
+        return request;
     }
 
-    public Twopc.SQL sendAbort(final Twopc.SQL request) {
-        Twopc.SQL finalResponse = null;
-        for (Map.Entry<Integer, CohortClient>client:cohortClientMap.entrySet()) {
+    public TxnState sendAbort(final TxnState request) {
+
+        for (TxnResp prepareResponses : request.txnResps) {
+            Integer cohortID = prepareResponses.cohortID;
+            CohortClient client = cohortClientMap.get(cohortID);
+            db.updateProtocolLog(request.txnID, cohortID, Twopc.Status.ABORT.toString());
+            Twopc.SQL response = client.abort(
+                    Twopc.SQL.newBuilder()
+                            .setAgentID(cohortID)
+                            .setId(request.txnID)
+                            .setStatus(Twopc.Status.ABORT)
+                            .build());
+            db.updateProtocolLog(response.getId(), cohortID, response.getStatus().toString());
+        }
+        return request;
+        /*Twopc.SQL finalResponse = null;
+        for (Map.Entry<Integer, CohortClient> client : cohortClientMap.entrySet()) {
             Integer cohortID = client.getKey();
             db.updateProtocolLog(request.getId(), cohortID, Twopc.Status.ABORT.toString());
             Twopc.SQL response = client.getValue().abort(request);
@@ -61,11 +98,11 @@ public class CohortManager {
         }
         finalResponse = Twopc.SQL.newBuilder().setStatus(Twopc.Status.ABORTED).setId(request.getId()).build();
 
-        return finalResponse;
+        return finalResponse;*/
     }
 
     public void setDB(DB db) {
-        this.db=db;
+        this.db = db;
     }
 }
 

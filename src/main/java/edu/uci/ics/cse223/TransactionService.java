@@ -3,6 +3,7 @@ package edu.uci.ics.cse223;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -70,25 +71,30 @@ class TransactionExecutor implements Runnable {
          * 1. TxnID, TxnStmts
          * 2. TxnID, CohortID, Status (PREPARE, COMMIT)
          */
-/*        String txnQuery = String.join(";", request.getStatementList());
-        db.insertRedoLog(request.getId(),txnQuery );
-        Twopc.SQL prepareResponse = cm.sendPrepare(request);
-        if (prepareResponse.getStatus()== Twopc.Status.COMMIT) {
-            Twopc.SQL commitResponse = cm.sendCommit(prepareResponse);
-            *//**
+        List<Twopc.HashedQuery> queries = request.getStatementList();
+
+//        String txnQuery = String.join(";", request.getStatementList());
+        db.insertRedoLog(request.getId(),queries );
+        TxnState responseState = cm.sendPrepare(request);
+        if (responseState.status == Twopc.Status.COMMIT) {
+            TxnState commitResponse = cm.sendCommit(responseState);
+            /**
              * Delete transaction entries from log.
-             *//*
-//            db.deleteRedoLog(request.getId());
-//            db.deleteProtocolLog(request.getId());
+             */
+            db.deleteRedoLog(request.getId());
+            db.deleteProtocolLog(request.getId());
             responseObserver.onNext(Twopc.TransactionStatus.newBuilder().setStatus(Twopc.Status.COMMITTED).build());
             responseObserver.onCompleted();
         } else {
-            *//**
+            /**
              * Update Txn Entries to ABORT.
-             *//*
-            Twopc.SQL abortResponse = cm.sendAbort(Twopc.SQL.newBuilder(prepareResponse).setStatus(Twopc.Status.ABORT).build());
+             */
+            for(TxnResp txnQueries:responseState.txnResps) {
+                db.updateProtocolLog(responseState.txnID, txnQueries.cohortID, Twopc.Status.ABORTED.toString());
+            }
+            TxnState abortResponse = cm.sendAbort(responseState);
             responseObserver.onNext(Twopc.TransactionStatus.newBuilder().setStatus(Twopc.Status.ABORTED).build());
             responseObserver.onCompleted();
-        }*/
+        }
     }
 }
