@@ -5,6 +5,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -18,6 +19,7 @@ public class CohortService extends CohortGrpc.CohortImplBase {
         this.db = db;
         coordinatorClient = new CoordinatorClient();
         this.id = cohortID;
+        checkBackupTxns();
     }
 
     public void checkBackupTxns() {
@@ -31,6 +33,24 @@ public class CohortService extends CohortGrpc.CohortImplBase {
          * if status == ABORT
          * send AbortAck to Coordinator.
          */
+        String status = "";
+        HashMap<String, String> uncommittedTranX = db.getUncommittedCohortLog();
+        for(String tranxId : uncommittedTranX.keySet()) {
+            while(true) {
+                if(!coordinatorClient.isConnected()) {
+                    continue;
+                }
+                status = uncommittedTranX.get(tranxId);
+                if (status.equals(Twopc.Status.PREPARE)) {
+                    coordinatorClient.sendPrepareAck(tranxId);
+                } else if (status.equals(Twopc.Status.COMMIT)) {
+                    coordinatorClient.sendCommitAck(tranxId);
+                } else if (status.equals(Twopc.Status.ABORT)) {
+                    coordinatorClient.sendAbortAck(tranxId);
+                }
+                break;
+            }
+        }
     }
 
     @Override
@@ -119,23 +139,23 @@ class CoordinatorClient {
         return !channel.isTerminated();
     }
 
-    public void sendPrepareAck(String id) {
+    public Twopc.SQL sendPrepareAck(String id) {
 
-        blockingStub.preparedAck(Twopc.SQL.newBuilder().setId(id).build());
+        return blockingStub.preparedAck(Twopc.SQL.newBuilder().setId(id).build());
         /**
          * Set status in log to PREPARED
          */
     }
 
-    public void sendCommitAck(String id) {
-        blockingStub.commitAck(Twopc.SQL.newBuilder().setId(id).build());
+    public Twopc.SQL sendCommitAck(String id) {
+        return blockingStub.commitAck(Twopc.SQL.newBuilder().setId(id).build());
         /**
          * Set status in log to COMMITTED
          */
     }
 
-    public void sendAbortAck(String id) {
-        blockingStub.abortAck(Twopc.SQL.newBuilder().setId(id).build());
+    public Twopc.SQL sendAbortAck(String id) {
+        return blockingStub.abortAck(Twopc.SQL.newBuilder().setId(id).build());
         /**
          * Set status in log to ABORTED.
          */

@@ -3,6 +3,7 @@ package edu.uci.ics.cse223;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -290,6 +291,23 @@ public class DB {
             return res;
         }
         return res;
+    }
+
+    public HashMap<String, String> getUncommittedCohortLog() {
+        HashMap<String, String> transX = new HashMap<>();
+        String query = "select txnId, status from CohortLog where status=?";
+        PreparedStatement pStatement = null;
+        try {
+            pStatement = conn.prepareStatement(query);
+            pStatement.setString(1, "0");
+            ResultSet rs = pStatement.executeQuery();
+            while (rs.next()) {
+                transX.put(rs.getString(0), rs.getString(1));
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return transX;
     }
 
     public boolean insertCohortLog(String txnId, String st) {
