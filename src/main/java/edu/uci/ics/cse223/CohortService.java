@@ -33,6 +33,7 @@ public class CohortService extends CohortGrpc.CohortImplBase {
          * if status == ABORT
          * send AbortAck to Coordinator.
          */
+        Twopc.SQL response = null;
         String status = "";
         HashMap<String, String> uncommittedTranX = db.getUncommittedCohortLog();
         for(String tranxId : uncommittedTranX.keySet()) {
@@ -42,12 +43,13 @@ public class CohortService extends CohortGrpc.CohortImplBase {
                 }
                 status = uncommittedTranX.get(tranxId);
                 if (status.equals(Twopc.Status.PREPARE)) {
-                    coordinatorClient.sendPrepareAck(tranxId);
+                    response = coordinatorClient.sendPrepareAck(tranxId);
                 } else if (status.equals(Twopc.Status.COMMIT)) {
-                    coordinatorClient.sendCommitAck(tranxId);
+                    response = coordinatorClient.sendCommitAck(tranxId);
                 } else if (status.equals(Twopc.Status.ABORT)) {
-                    coordinatorClient.sendAbortAck(tranxId);
+                    response = coordinatorClient.sendAbortAck(tranxId);
                 }
+                db.updateCohortLog(tranxId, response.getStatus().toString());
                 break;
             }
         }
