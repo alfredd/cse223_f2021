@@ -49,7 +49,7 @@ public class DB {
                         "  PRIMARY KEY (id))",
                 "CREATE TABLE IF NOT EXISTS RedoLog (" +
                         " txnId varchar(25) NOT NULL," +
-                        " cohortId varchar(25) NOT NULL," +
+                        " cohortId integer NOT NULL," +
                         " txnStatement varchar(255) NOT NULL)",
                 "CREATE TABLE IF NOT EXISTS ProtocolLog (" +
                         " txnId varchar(25) NOT NULL, " +
@@ -149,7 +149,7 @@ public class DB {
     public boolean insertRedoLog(String txnId, List<Twopc.HashedQuery> txnQuery) {
         boolean status = false;
         String preparedQuery = "insert into RedoLog (txnId, cohortId, txnStatement) values (?, ? ,?)";
-        for (Twopc.HashedQuery query: txnQuery) {
+        for (Twopc.HashedQuery query : txnQuery) {
 
             try {
                 PreparedStatement pStatement = conn.prepareStatement(preparedQuery);
@@ -229,14 +229,39 @@ public class DB {
         return status;
     }
 
-    public String getProtocolLogStatus(String txnId, String cohortId) { // txnId, cohortId
+    public TxnState getTxnStatusFromProtocolLog(String txnId) {
+        String query = "SELECT cohortId, status FROM ProtocolLog where txnId=?";
+        TxnState txnState = new TxnState();
+        txnState.txnID= txnId;
+        ResultSet resultSet = null;
+        try {
+            PreparedStatement pStmt = conn.prepareStatement(query);
+            pStmt.setString(1, txnId);
+            resultSet = pStmt.executeQuery();
+            while(resultSet.next()) {
+                int cohortID = resultSet.getInt("cohortid");
+                String status = resultSet.getString("status");
+
+                Twopc.Status status1 = Twopc.Status.valueOf(status);
+                if (status1== Twopc.Status.ABORT) {
+                    txnState.status=status1;
+                }
+                txnState.addTxnState(cohortID, status1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return txnState;
+    }
+
+    public String getProtocolLogStatus(String txnId, Integer cohortId) { // txnId, cohortId
         String status = "";
         String query = "select status from ProtocolLog where txnId=? and cohortId=?";
         PreparedStatement prepStmt = null;
         try {
             prepStmt = conn.prepareStatement(query);
             prepStmt.setString(1, txnId);
-            prepStmt.setString(2, cohortId);
+            prepStmt.setInt(2, cohortId);
             ResultSet rs = prepStmt.executeQuery();
             while (rs.next()) {
                 status = rs.getString(0);

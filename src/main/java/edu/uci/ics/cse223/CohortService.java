@@ -5,6 +5,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 public class CohortService extends CohortGrpc.CohortImplBase {
@@ -14,9 +15,9 @@ public class CohortService extends CohortGrpc.CohortImplBase {
 
 
     public CohortService(Integer cohortID, DB db) throws IOException {
-        this.db=db;
+        this.db = db;
         coordinatorClient = new CoordinatorClient();
-        this.id=cohortID;
+        this.id = cohortID;
     }
 
     public void checkBackupTxns() {
@@ -39,15 +40,25 @@ public class CohortService extends CohortGrpc.CohortImplBase {
          * DB call to PREPARE TRANSACTION with request.id
          * Based on return value add response to responseObserver.
          */
-        db.insertCohortLog(request.getId(), Twopc.Status.PREPARE.toString());
-        boolean status = db.prepareSQL(request);
-        Twopc.Status responseStatus;
-        if (status) {
-            db.updateCohortLog(request.getId(), Twopc.Status.COMMIT.toString());
-            responseStatus = Twopc.Status.COMMIT;
-        } else {
-            db.updateCohortLog(request.getId(), Twopc.Status.ABORT.toString());
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("1 to Prepare, Anything else to abort.");
+        String choice = scanner.next();
+        Twopc.Status responseStatus = Twopc.Status.COMMIT;
+        if (!choice.equals("1")) {
             responseStatus = Twopc.Status.ABORT;
+            db.insertCohortLog(request.getId(), Twopc.Status.ABORT.toString());
+        }
+        if (responseStatus == Twopc.Status.COMMIT) {
+            db.insertCohortLog(request.getId(), Twopc.Status.PREPARE.toString());
+            boolean status = db.prepareSQL(request);
+            if (status) {
+                db.updateCohortLog(request.getId(), Twopc.Status.COMMIT.toString());
+                responseStatus = Twopc.Status.COMMIT;
+            } else {
+                db.updateCohortLog(request.getId(), Twopc.Status.ABORT.toString());
+                responseStatus = Twopc.Status.ABORT;
+            }
         }
         Twopc.SQL resp = Twopc.SQL.newBuilder().setId(request.getId()).setAgentID(this.id).setStatus(responseStatus).build();
         responseObserver.onNext(resp);
@@ -115,12 +126,14 @@ class CoordinatorClient {
          * Set status in log to PREPARED
          */
     }
+
     public void sendCommitAck(String id) {
         blockingStub.commitAck(Twopc.SQL.newBuilder().setId(id).build());
         /**
          * Set status in log to COMMITTED
          */
     }
+
     public void sendAbortAck(String id) {
         blockingStub.abortAck(Twopc.SQL.newBuilder().setId(id).build());
         /**

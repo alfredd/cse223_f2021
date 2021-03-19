@@ -29,15 +29,23 @@ public class CohortManager {
             Integer cohortID = hashedQuery.getHash();
             CohortClient client = cohortClientMap.get(cohortID);
             db.insertProtocolLog(request.getId(), cohortID, Twopc.Status.PREPARE.toString());
-            Twopc.SQL prepareResponse = client.prepare(
-                    Twopc.SQL.newBuilder()
-                            .setId(request.getId())
-                            .setAgentID(cohortID)
-                            .addStatement(hashedQuery.getStatement())
-                            .build());
+            Twopc.SQL prepareResponse;
+            Twopc.SQL.Builder twoPCrequest = Twopc.SQL.newBuilder()
+                    .setId(request.getId())
+                    .setAgentID(cohortID)
+                    .addStatement(hashedQuery.getStatement())
+                    ;
+            try {
+
+                prepareResponse = client.prepare(
+                        twoPCrequest.build());
+            } catch (Exception e) {
+                System.out.println("Cannot get prepare response from CohortID: "+cohortID+". "+e.getLocalizedMessage());
+                prepareResponse =twoPCrequest.setStatus(Twopc.Status.WAIT).build();
+            }
             db.updateProtocolLog(request.getId(), cohortID, prepareResponse.getStatus().toString());
             state.addTxnState(cohortID, prepareResponse.getStatus());
-            if (prepareResponse.getStatus()== Twopc.Status.ABORT) {
+            if (prepareResponse.getStatus()!= Twopc.Status.COMMIT) {
                 state.status=prepareResponse.getStatus();
             }
         }

@@ -17,7 +17,15 @@ public class CoordinatorService extends CoordinatorGrpc.CoordinatorImplBase {
          * Respond with WAIT if response from other cohorts is still needed.
          * Respond with COMMIT if Commit decision has been made.
          */
-        super.preparedAck(request, responseObserver);
+
+        String txnid = request.getId();
+        int cohortID = request.getAgentID();
+        db.updateProtocolLog(txnid, cohortID, request.getStatus().toString());
+        TxnState txnState = db.getTxnStatusFromProtocolLog(txnid);
+
+        responseObserver.onNext(Twopc.SQL.newBuilder(request).setStatus(txnState.status).build());
+
+        responseObserver.onCompleted();
     }
 
     @Override
