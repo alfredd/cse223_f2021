@@ -23,7 +23,7 @@ public class CohortManager {
     public TxnState sendPrepare(final Twopc.Transaction request) {
         Twopc.SQL finalResponse = null;
         TxnState state = new TxnState();
-        state.status= Twopc.Status.COMMIT;
+        state.status = Twopc.Status.COMMIT;
         state.txnID = request.getId();
         for (Twopc.HashedQuery hashedQuery : request.getStatementList()) {
             Integer cohortID = hashedQuery.getHash();
@@ -33,20 +33,20 @@ public class CohortManager {
             Twopc.SQL.Builder twoPCrequest = Twopc.SQL.newBuilder()
                     .setId(request.getId())
                     .setAgentID(cohortID)
-                    .addStatement(hashedQuery.getStatement())
-                    ;
+                    .addStatement(hashedQuery.getStatement());
             try {
 
                 prepareResponse = client.prepare(
                         twoPCrequest.build());
             } catch (Exception e) {
-                System.out.println("Cannot get prepare response from CohortID: "+cohortID+". "+e.getLocalizedMessage());
-                prepareResponse =twoPCrequest.setStatus(Twopc.Status.WAIT).build();
+                System.out.println("Cannot get prepare response from CohortID: " + cohortID + ". " + e.getLocalizedMessage());
+                prepareResponse = twoPCrequest.setStatus(Twopc.Status.WAIT).build();
             }
             db.updateProtocolLog(request.getId(), cohortID, prepareResponse.getStatus().toString());
             state.addTxnState(cohortID, prepareResponse.getStatus());
-            if (prepareResponse.getStatus()!= Twopc.Status.COMMIT) {
-                state.status=prepareResponse.getStatus();
+            if (prepareResponse.getStatus() != Twopc.Status.COMMIT) {
+                if (state.status != Twopc.Status.ABORT)
+                    state.status = prepareResponse.getStatus();
             }
         }
 /*        for (Map.Entry<Integer, CohortClient> client : cohortClientMap.entrySet()) {

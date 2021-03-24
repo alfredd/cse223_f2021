@@ -22,7 +22,7 @@ public class TransactionService extends TransactionServiceGrpc.TransactionServic
         cm.setDB(db);
     }
 
-    public void checkBackupTxns () {
+    public void checkBackupTxns() {
         /**
          * Load Status of txns from LOG.
          * If PREPARE but no response from Cohorts yet:
@@ -44,7 +44,7 @@ public class TransactionService extends TransactionServiceGrpc.TransactionServic
          * Based on Response from all Cohorts, Commit OR Abort.
          * Finally call responseObserver to send response to client.
          */
-        threadPoolExecutor.execute(new TransactionExecutor(request,responseObserver,db,cm));
+        threadPoolExecutor.execute(new TransactionExecutor(request, responseObserver, db, cm));
     }
 }
 
@@ -74,22 +74,28 @@ class TransactionExecutor implements Runnable {
         List<Twopc.HashedQuery> queries = request.getStatementList();
 
 //        String txnQuery = String.join(";", request.getStatementList());
-        db.insertRedoLog(request.getId(),queries );
+        db.insertRedoLog(request.getId(), queries);
         TxnState responseState = cm.sendPrepare(request);
         if (responseState.status == Twopc.Status.COMMIT) {
+            for (TxnResp txnQueries : responseState.txnResps) {
+                db.updateProtocolLog(responseState.txnID, txnQueries.cohortID, Twopc.Status.COMMITTED.toString());
+            }
             TxnState commitResponse = cm.sendCommit(responseState);
             /**
              * Delete transaction entries from log.
              */
-            db.deleteRedoLog(request.getId());
-            db.deleteProtocolLog(request.getId());
             responseObserver.onNext(Twopc.TransactionStatus.newBuilder().setStatus(Twopc.Status.COMMITTED).build());
             responseObserver.onCompleted();
+        }
+        if (responseState.status == Twopc.Status.WAIT) {
+            for (TxnResp txnQueries: responseState.txnResps) {
+                db.updateProtocolLog(responseState.txnID, txnQueries.cohortID, responseState.status.toString());
+            }
         } else {
             /**
              * Update Txn Entries to ABORT.
              */
-            for(TxnResp txnQueries:responseState.txnResps) {
+            for (TxnResp txnQueries : responseState.txnResps) {
                 db.updateProtocolLog(responseState.txnID, txnQueries.cohortID, Twopc.Status.ABORTED.toString());
             }
             TxnState abortResponse = cm.sendAbort(responseState);
